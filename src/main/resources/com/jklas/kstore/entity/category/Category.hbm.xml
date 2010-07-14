@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+"-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.jklas.kstore.entity.category">
+    <class name="Category" table="CATEGORY">
+        <id name="id" type="long" column="CATEG_ID">
+            
+        </id>
+			
+	    <property name="name" column="CATEG_NAME" />
+	    
+	    <many-to-one name="site" class="com.jklas.kstore.entity.site.Site" />
+	    
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+	"-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+	"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.jklas.kstore.entity.advertising">
+
+  <class name="Advertising" table="ADVERTISING">
+  
+  	<id column="ADVERTISING_ID" name="id" type="long">
+  		<generator class="sequence"/>
+  	</id>
+      
+   <property name="title" column="TITLE"/>
+   
+   <property name="subtitle" column="SUBTITLE"/>
+   
+   <property name="linkTitle" column="LINK_TITLE"/>
+   
+   <property name="link" column="LINK"/>
+   
+   <property name="clicks" column="CLICKS"/>
+   
+   <property name="prints" column="PRINTS"/>
+         
+   <many-to-one name="site" class="com.jklas.kstore.entity.site.Site" column="SITE_ID"/>
+   
+  </class>
+</hibernate-mapping>
