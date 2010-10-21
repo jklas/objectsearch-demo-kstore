@@ -31,7 +31,7 @@
 								    
 	<bean id="BerkeleyIndex" class="com.jklas.search.index.berkeley.BerkeleyGlobalPropertyEditor">
 		<property name="baseDir">
-			<value>/home/julian/workspace/kstore/berkeley/</value>
+			<value>/home/julian/tesis-workspace/kstore/berkeley/</value>
 		</property>
 	</bean>
 		
