@@ -1,222 +1,113 @@
-/**
- * Object Search Framework
- *
- * Copyright (C) 2010 Julian Klas
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- */
 package com.jklas.kstore.servlet;
 
-import java.io.Serializable;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Random;
 
+import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
-import com.jklas.kstore.HibernateHelper;
-import com.jklas.kstore.entity.advertising.Advertising;
-import com.jklas.kstore.entity.item.Item;
-import com.jklas.search.engine.VectorSearch;
-import com.jklas.search.engine.dto.VectorRankedResult;
-import com.jklas.search.engine.score.DefaultVectorRanker;
-import com.jklas.search.index.IndexId;
-import com.jklas.search.index.berkeley.BerkeleyIndexReaderFactory;
-import com.jklas.search.query.vectorial.VectorQuery;
-import com.jklas.search.query.vectorial.VectorQueryParser;
+public class CaptchaServlet extends HttpServlet {
 
-public class SearchController implements Controller {
+	private static final long serialVersionUID = 1L;
 
-	private SessionFactory sessionFactory;
-	
-	private Pattern semicolonPattern = Pattern.compile(";");
-		
-	public SearchController(HibernateHelper helper) {
-		this.sessionFactory = helper.getSessionFactory();
-	}
-	
-	public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
-	}
-	
-    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException {
-    	
-    	Map<String, Object> model = new HashMap<String,Object>();
-    	
-    	int page= request.getParameter("page") == null ? 1 : Integer.parseInt(request.getParameter("page"));
-    	int pageSize = request.getParameter("pageSize") == null ? 10 : Integer.parseInt(request.getParameter("pageSize"));
-    	
-    	setPagingValues(model, page, pageSize);
-    	
-    	String searchExpression = request.getParameter("q");
-		
-    	VectorQuery query = new VectorQueryParser(searchExpression).getQuery();
 
-    	query.setPage(page);
-    	query.setPageSize(pageSize+1);
-    	
-		long init = System.currentTimeMillis();
-		VectorSearch vectorSearch = new VectorSearch(query, BerkeleyIndexReaderFactory.getInstance());
-		long totalTime = System.currentTimeMillis() - init;
+	protected void processRequest(HttpServletRequest request, 
+			HttpServletResponse response) 
+	throws ServletException, IOException {
+
+		int width = 150;
+		int height = 50;
+
+		char data[] = {
+				 'a', 'f', 'k', 'p', 't', 'x', '1', 'W', 
+				 'b', 'g', 'l', 'q', 'u', '3', '4', 'E' ,
+				 'c', 'h', 'm', 'r', 'v', 'y', '2', 'R', 
+				 'd', 'i', 'n', 's', 'w', 'z', '@', 'T',
+				 'e', 'j', 'o', '5', '6', '7', '8', '9' };
+
+
+		BufferedImage bufferedImage = new BufferedImage(width, height, 
+				BufferedImage.TYPE_INT_RGB);
+
+		Graphics2D g2d = bufferedImage.createGraphics();
+
+		Font font = new Font("Georgia", Font.BOLD, 18);
+		g2d.setFont(font);
+
+		RenderingHints rh = new RenderingHints(
+				RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+
+		rh.put(RenderingHints.KEY_RENDERING, 
+				RenderingHints.VALUE_RENDER_QUALITY);
+
+		g2d.setRenderingHints(rh);
+
+		GradientPaint gp = new GradientPaint(0, 0, 
+				Color.white, 0, height/2, Color.orange, true);
+
+		g2d.setPaint(gp);
+		g2d.fillRect(0, 0, width, height);
+
+		g2d.setColor(new Color(255, 153, 0));
+
+		Random r = new Random();
+
+		String captcha = selectText(data);
 		
-		List<VectorRankedResult> results = vectorSearch.search(new DefaultVectorRanker());
-		
-		
-		if(results.size()>pageSize) {
-			results.remove(results.size()-1);
-			model.put("search.more_pages","true");
+		request.getSession().setAttribute("captcha", captcha );
+
+		int x = 0; 
+		int y = 0;
+
+		for (int i=0; i< captcha.length(); i++) {
+			x += 10 + (Math.abs(r.nextInt()) % 15);
+			y = 20 + Math.abs(r.nextInt()) % 20;
+			g2d.drawChars(captcha.toCharArray(), i, 1, x, y);
 		}
-		query.setPageSize(pageSize);
-		query.setSelectedIndex(IndexId.getDefaultIndexId());
 
-		model.put("search.query", searchExpression);
+		g2d.dispose();
+
+		response.setContentType("image/png");
+		OutputStream os = response.getOutputStream();
+		ImageIO.write(bufferedImage, "png", os);
+		os.close();
+	} 
+
+
+	private String selectText(char[] data) {
+		StringBuffer buffer = new StringBuffer();
+		int size= (int) (Math.random()*3+5);
 		
-		if(results.size()==0) {
-			model.put("results.start", 0);
-			model.put("results.end", 0);
-		} else {
-			model.put("results.start", (query.getPage()-1)*query.getPageSize()+1);		
-			model.put("results.end", (query.getPage()-1)*query.getPageSize()+results.size());			
+		for (int i = 0; i < size; i++) {
+			int r = (int) Math.floor(Math.random() * data.length);
+			buffer.append(data[r]);
 		}
-		
-		model.put("search.time", ((float)totalTime)/1000);
-
-		Session session = sessionFactory.openSession();
-		try {
-			putCartObjectsVariables(request, model, session);
-			
-			List<Object> resultList = new ArrayList<Object>();			
-			model.put("results", resultList);
-			
-			for (VectorRankedResult result : results) {
-				Class<?> resultClass = result.getKey().getClazz();
-				Serializable resultId = result.getKey().getId();
-				Object loadedObject = session.get(resultClass, resultId);
-				
-				if(loadedObject == null) continue;
-				
-				if(!loadedObject.getClass().equals(Item.class)) continue;
-				
-				resultList.add(
-							new ResultRow(loadedObject,result.getScore())
-						);
-			}
-			
-			getAds(model, searchExpression, session);
-		} finally {
-			if(session!=null) session.close();
-		}
-		
-		
-        return new ModelAndView("searchResultsView","searchResults",model);
-    }
-
-	private void putCartObjectsVariables(HttpServletRequest request, Map<String, Object> model, Session session) {		
-		Cookie[] cookies = request.getCookies();
-		
-		if(cookies == null) return;
-
-		List<Object> resultList = new ArrayList<Object>();			
-		model.put("cartItemsAtLoad", resultList);
-		
-		try {
-			for (Cookie cookie : cookies) {
-				if("cart".equals(cookie.getName())) {
-					String[] itemIds = semicolonPattern.split(URLDecoder.decode(cookie.getValue(),"UTF-8"));
-
-					for (int i = 0; i < itemIds.length; i++) {
-						Long id = Long.parseLong(itemIds[i]);
-						
-						Object loadedObject = session.get(Item.class, id);
-						
-						resultList.add(loadedObject);
-					}
-				}
-			}			
-		} catch (Exception e) {
-			return;
-		}		
+		return buffer.toString();
 	}
 
-	private void getAds(Map<String, Object> model, String searchExpression, Session session) {
-    	VectorQuery query = new VectorQueryParser(searchExpression).getQuery();
 
-    	query.setPage(1);
-    	query.setPageSize(3);
-    	query.setSelectedIndex(new IndexId("ADS"));
-    	
-		long init = System.currentTimeMillis();
-		VectorSearch vectorSearch = new VectorSearch(query, BerkeleyIndexReaderFactory.getInstance());
-		long totalTime = System.currentTimeMillis() - init;
-		
-		model.put("search.ads_time", ((float)totalTime)/1000);
-		
-		List<VectorRankedResult> results = vectorSearch.search(new DefaultVectorRanker());
-				
-		List<Object> resultList = new ArrayList<Object>();
-		
-		for (VectorRankedResult result : results) {
-			
-			model.put("ads", resultList);
-			
-			Class<?> resultClass = result.getKey().getClazz();
-			Serializable resultId = result.getKey().getId();
-			Object loadedObject = session.get(resultClass, resultId);
-			
-			if(loadedObject == null) continue;
-			
-			if(!loadedObject.getClass().equals(Advertising.class)) continue;
-			
-			resultList.add(
-						new ResultRow(loadedObject,result.getScore())
-					);
-		}
-	}
+	protected void doGet(HttpServletRequest request, 
+			HttpServletResponse response)
+	throws ServletException, IOException {
+		processRequest(request, response);
+	} 
 
-	private void setPagingValues(Map<String, Object> model, int page, int pageSize) {
-		model.put("search.next_page",String.valueOf(page+1));
-    	model.put("search.page_size",String.valueOf(pageSize));
-    	model.put("search.current_page",String.valueOf(page));
+
+	protected void doPost(HttpServletRequest request, 
+			HttpServletResponse response)
+	throws ServletException, IOException {
+		processRequest(request, response);
 	}
-    
-	public class ResultRow {
-		public final Object result;
-		public final Double score;
-		
-		public ResultRow(Object result, Double score) {
-			this.result = result;
-			this.score = score;
-		}
-		
-		public Object getResult() {
-			return result;
-		}
-		
-		public Double getScore() {
-			return score;
-		}
-	}	
 }
