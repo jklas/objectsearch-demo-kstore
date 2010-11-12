@@ -23,6 +23,7 @@ import com.jklas.kstore.entity.advertising.Advertising;
 import com.jklas.kstore.entity.item.Item;
 import com.jklas.search.engine.VectorSearch;
 import com.jklas.search.engine.dto.VectorRankedResult;
+import com.jklas.search.engine.score.DefaultVectorRanker;
 import com.jklas.search.engine.score.VectorRanker;
 import com.jklas.search.index.IndexId;
 import com.jklas.search.index.berkeley.BerkeleyIndexReaderFactory;
@@ -63,7 +64,7 @@ public class SearchController implements Controller {
 		VectorSearch vectorSearch = new VectorSearch(query, BerkeleyIndexReaderFactory.getInstance());
 		long totalTime = System.currentTimeMillis() - init;
 		
-		List<VectorRankedResult> results = vectorSearch.search(new VectorRanker());
+		List<VectorRankedResult> results = vectorSearch.search(new DefaultVectorRanker());
 		
 		
 		if(results.size()>pageSize) {
@@ -155,7 +156,7 @@ public class SearchController implements Controller {
 		
 		model.put("search.ads_time", ((float)totalTime)/1000);
 		
-		List<VectorRankedResult> results = vectorSearch.search(new VectorRanker());
+		List<VectorRankedResult> results = vectorSearch.search(new DefaultVectorRanker());
 				
 		List<Object> resultList = new ArrayList<Object>();
 		
